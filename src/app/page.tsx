@@ -1,101 +1,158 @@
+
+'use client';
+import { useState } from "react";
+import BookCard from "@/components/book-card";
+import { books as bookData } from "../../data"; // Importing the books data
 import Image from "next/image";
+export interface Book {
+  id: number;
+  title: string;
+  author: string;
+  imgUrl: string;
+}
 
-export default function Home() {
+const Page = () => {
+  const [books, setBooks] = useState<Book[]>(bookData);
+  const [newBook, setNewBook] = useState({
+    title: "",
+    author: "",
+    imgFile: null as File | null,
+    imgPreview: "" as string, // For image preview
+  });
+
+  // Handle file input change for image
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileUrl = URL.createObjectURL(file); // Create a preview URL for the image
+      setNewBook({ ...newBook, imgFile: file, imgPreview: fileUrl });
+    }
+  };
+
+  // Handle input changes for title and author
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewBook({ ...newBook, [name]: value });
+  };
+
+  // Handle adding a new book
+  const handleAddBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newBook.title || !newBook.author || !newBook.imgFile) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    // Normally you would upload the image to the server and get the URL back
+    const newBookEntry: Book = {
+      id: books.length + 1,
+      title: newBook.title,
+      author: newBook.author,
+      imgUrl: newBook.imgPreview, // For demo purposes, we use the preview URL
+    };
+
+    setBooks((prevBooks) => [...prevBooks, newBookEntry]);
+
+    // Reset form
+    setNewBook({
+      title: "",
+      author: "",
+      imgFile: null,
+      imgPreview: "",
+    });
+  };
+
+
+  const handleDelete = (id: number) => {
+        const updatedBooks = books.filter((book) => book.id !== id);
+        setBooks(updatedBooks);
+      };
+    
+      // Function to update a book
+      const handleUpdate = (updatedBook: Book) => {
+        const updatedBooks = books.map((book) =>
+          book.id === updatedBook.id ? { ...book, ...updatedBook } : book
+        );
+        setBooks(updatedBooks);
+      };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-slate-500 py-10 px-4">
+      <h1 className="text-4xl font-semibold text-center text-gray-800 mb-16">
+        Book List
+      </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* Form for adding a new book */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-center text-gray-800">Add a New Book</h2>
+        <form onSubmit={handleAddBook} className="space-y-4">
+          <div className="flex flex-col items-center">
+            <input
+              type="text"
+              name="title"
+              value={newBook.title}
+              onChange={handleInputChange}
+              placeholder="Book Title"
+              className="border px-4 py-2 rounded-lg"
+              required
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+            <input
+              type="text"
+              name="author"
+              value={newBook.author}
+              onChange={handleInputChange}
+              placeholder="Author"
+              className="border px-4 py-2 rounded-lg mt-4"
+              required
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="border px-4 py-2 rounded-lg mt-4"
+              required
+            />
+            
+            {/* Display the image preview */}
+            {newBook.imgPreview && (
+              <div className="mt-4">
+                <Image
+                  src={newBook.imgPreview}
+                  height={32}
+                  width={32}
+                  alt="Book Preview"
+                  className="w-32 h-32 object-cover rounded-md"
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg mt-4"
+            >
+              Add Book
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
+        {books.map((book) => (
+          <BookCard
+     key=     {`${book.id}-${book.title}`}
+            
+            id={book.id}
+            author={book.author}
+            title={book.title}
+            imgUrl={book.imgUrl}
+            onDelete={() => handleDelete(book.id)}
+            onUpdate={handleUpdate}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        ))}
+      </div>
     </div>
   );
-}
+};
+
+export default Page;
